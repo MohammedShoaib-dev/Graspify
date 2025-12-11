@@ -1,0 +1,364 @@
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { useGameStore } from '@/lib/gameStore';
+import {
+  Layers,
+  Plus,
+  Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  RotateCcw,
+  ThumbsUp,
+  ThumbsDown,
+  Meh,
+  Upload,
+} from 'lucide-react';
+import { Flashcard, FlashcardDeck } from '@/types';
+import { cn } from '@/lib/utils';
+
+const mockFlashcards: Flashcard[] = [
+  {
+    id: '1',
+    front: 'What is the Pythagorean theorem?',
+    back: 'a² + b² = c², where c is the hypotenuse of a right triangle and a, b are the other two sides.',
+    difficulty: 'easy',
+    deckId: '1',
+    interval: 1,
+    easeFactor: 2.5,
+    repetitions: 0,
+    nextReviewDate: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    front: 'What is the quadratic formula?',
+    back: 'x = (-b ± √(b² - 4ac)) / 2a\n\nUsed to solve equations in the form ax² + bx + c = 0',
+    difficulty: 'medium',
+    deckId: '1',
+    interval: 1,
+    easeFactor: 2.5,
+    repetitions: 0,
+    nextReviewDate: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    front: 'What is Euler\'s identity?',
+    back: 'e^(iπ) + 1 = 0\n\nConnects five fundamental mathematical constants: e, i, π, 1, and 0',
+    difficulty: 'hard',
+    deckId: '1',
+    interval: 1,
+    easeFactor: 2.5,
+    repetitions: 0,
+    nextReviewDate: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    front: 'What is the derivative of sin(x)?',
+    back: 'cos(x)',
+    difficulty: 'easy',
+    deckId: '1',
+    interval: 1,
+    easeFactor: 2.5,
+    repetitions: 0,
+    nextReviewDate: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    front: 'What is the chain rule?',
+    back: 'd/dx[f(g(x))] = f\'(g(x)) · g\'(x)\n\nUsed to differentiate composite functions',
+    difficulty: 'medium',
+    deckId: '1',
+    interval: 1,
+    easeFactor: 2.5,
+    repetitions: 0,
+    nextReviewDate: new Date().toISOString(),
+  },
+];
+
+export default function Flashcards() {
+  const { toast } = useToast();
+  const { addXP, incrementStat, updateMissionProgress } = useGameStore();
+  
+  const [cards, setCards] = useState<Flashcard[]>(mockFlashcards);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [showCreate, setShowCreate] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [sourceText, setSourceText] = useState('');
+  const [reviewedCount, setReviewedCount] = useState(0);
+
+  const currentCard = cards[currentIndex];
+
+  const handleFlip = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  const handleRating = (rating: 'hard' | 'good' | 'easy') => {
+    incrementStat('flashcardsReviewed');
+    updateMissionProgress('flashcard');
+    const { xpGained } = addXP('review_flashcard');
+    setReviewedCount(reviewedCount + 1);
+    
+    // Update card with SM-2 algorithm (simplified)
+    const updatedCards = [...cards];
+    const card = { ...updatedCards[currentIndex] };
+    
+    if (rating === 'hard') {
+      card.interval = 1;
+      card.easeFactor = Math.max(1.3, card.easeFactor - 0.2);
+    } else if (rating === 'good') {
+      card.repetitions += 1;
+      card.interval = card.repetitions === 1 ? 1 : card.repetitions === 2 ? 6 : Math.round(card.interval * card.easeFactor);
+    } else {
+      card.repetitions += 1;
+      card.interval = Math.round(card.interval * card.easeFactor * 1.3);
+      card.easeFactor += 0.1;
+    }
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + card.interval);
+    card.nextReviewDate = nextDate.toISOString();
+    card.lastReviewDate = new Date().toISOString();
+    
+    updatedCards[currentIndex] = card;
+    setCards(updatedCards);
+    
+    // Move to next card
+    if (currentIndex < cards.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setIsFlipped(false);
+    } else {
+      toast({
+        title: "Review Complete! 🎉",
+        description: `You reviewed ${cards.length} cards and earned XP!`,
+      });
+      setCurrentIndex(0);
+      setIsFlipped(false);
+    }
+  };
+
+  const generateFlashcards = async () => {
+    setIsGenerating(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Add mock generated cards
+    const newCards: Flashcard[] = [
+      {
+        id: `gen-${Date.now()}-1`,
+        front: 'What is Newton\'s First Law?',
+        back: 'An object at rest stays at rest, and an object in motion stays in motion unless acted upon by an external force.',
+        difficulty: 'medium',
+        deckId: '1',
+        interval: 1,
+        easeFactor: 2.5,
+        repetitions: 0,
+        nextReviewDate: new Date().toISOString(),
+      },
+      {
+        id: `gen-${Date.now()}-2`,
+        front: 'What is kinetic energy?',
+        back: 'KE = ½mv²\n\nThe energy an object possesses due to its motion.',
+        difficulty: 'easy',
+        deckId: '1',
+        interval: 1,
+        easeFactor: 2.5,
+        repetitions: 0,
+        nextReviewDate: new Date().toISOString(),
+      },
+    ];
+    
+    setCards([...cards, ...newCards]);
+    setIsGenerating(false);
+    setShowCreate(false);
+    setSourceText('');
+    
+    toast({
+      title: "Flashcards Generated! ✨",
+      description: `Added ${newCards.length} new flashcards to your deck.`,
+    });
+  };
+
+  const difficultyColors = {
+    easy: 'bg-success/20 text-success',
+    medium: 'bg-warning/20 text-warning',
+    hard: 'bg-destructive/20 text-destructive',
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-display font-bold">Flashcards</h1>
+          <p className="text-muted-foreground mt-1">
+            Master concepts with spaced repetition
+          </p>
+        </div>
+        <Button onClick={() => setShowCreate(!showCreate)} variant={showCreate ? "secondary" : "default"}>
+          {showCreate ? 'Back to Review' : (
+            <>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Cards
+            </>
+          )}
+        </Button>
+      </div>
+
+      {showCreate ? (
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Generate Flashcards from Notes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
+              <Upload className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+              <p className="font-medium mb-1">Upload PDF or Image</p>
+              <p className="text-sm text-muted-foreground">
+                Drag and drop or click to browse
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-sm text-muted-foreground">or paste notes</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+            
+            <Textarea
+              placeholder="Paste your notes here and AI will extract key concepts..."
+              value={sourceText}
+              onChange={(e) => setSourceText(e.target.value)}
+              className="min-h-[150px]"
+            />
+            
+            <Button
+              onClick={generateFlashcards}
+              disabled={!sourceText.trim() || isGenerating}
+              className="w-full gradient-primary text-primary-foreground"
+            >
+              {isGenerating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin mr-2" />
+                  Generating Flashcards...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Flashcards
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Progress */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>Card {currentIndex + 1} of {cards.length}</span>
+            <span>{reviewedCount} reviewed this session</span>
+          </div>
+
+          {/* Flashcard */}
+          <div
+            className={cn(
+              'flip-card w-full h-[350px] cursor-pointer',
+              isFlipped && 'flipped'
+            )}
+            onClick={handleFlip}
+          >
+            <div className="flip-card-inner relative w-full h-full">
+              {/* Front */}
+              <Card className="flip-card-front absolute inset-0 w-full h-full">
+                <CardContent className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <Badge className={cn('mb-4', difficultyColors[currentCard.difficulty])}>
+                    {currentCard.difficulty}
+                  </Badge>
+                  <p className="text-xl font-medium">{currentCard.front}</p>
+                  <p className="text-sm text-muted-foreground mt-4">Click to flip</p>
+                </CardContent>
+              </Card>
+
+              {/* Back */}
+              <Card className="flip-card-back absolute inset-0 w-full h-full bg-gradient-to-br from-primary/5 to-accent/5">
+                <CardContent className="flex flex-col items-center justify-center h-full p-8 text-center">
+                  <p className="text-lg whitespace-pre-line">{currentCard.back}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Rating Buttons */}
+          <div className="flex items-center justify-center gap-4">
+            <Button
+              onClick={() => handleRating('hard')}
+              variant="outline"
+              className="flex-1 border-destructive/30 hover:bg-destructive/10 hover:text-destructive"
+            >
+              <ThumbsDown className="w-4 h-4 mr-2" />
+              Hard
+            </Button>
+            <Button
+              onClick={() => handleRating('good')}
+              variant="outline"
+              className="flex-1 border-warning/30 hover:bg-warning/10 hover:text-warning"
+            >
+              <Meh className="w-4 h-4 mr-2" />
+              Good
+            </Button>
+            <Button
+              onClick={() => handleRating('easy')}
+              variant="outline"
+              className="flex-1 border-success/30 hover:bg-success/10 hover:text-success"
+            >
+              <ThumbsUp className="w-4 h-4 mr-2" />
+              Easy
+            </Button>
+          </div>
+
+          {/* Navigation */}
+          <div className="flex items-center justify-between">
+            <Button
+              onClick={() => {
+                setCurrentIndex(Math.max(0, currentIndex - 1));
+                setIsFlipped(false);
+              }}
+              variant="ghost"
+              disabled={currentIndex === 0}
+            >
+              <ChevronLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
+            <Button
+              onClick={() => {
+                setCurrentIndex(0);
+                setIsFlipped(false);
+              }}
+              variant="ghost"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Restart
+            </Button>
+            <Button
+              onClick={() => {
+                setCurrentIndex(Math.min(cards.length - 1, currentIndex + 1));
+                setIsFlipped(false);
+              }}
+              variant="ghost"
+              disabled={currentIndex === cards.length - 1}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
