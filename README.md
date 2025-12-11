@@ -1,3 +1,4 @@
+# Graspify
 # Graspify - Learn Genius
 
 A learning platform application built with modern web technologies.
