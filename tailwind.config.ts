@@ -113,12 +113,6 @@ export default {
           "0%": { transform: "translateY(0) rotateZ(0deg)", opacity: "1" },
           "100%": { transform: "translateY(100vh) rotateZ(720deg)", opacity: "0" },
         },
-        blob: {
-          "0%, 100%": { transform: "translate(0, 0) scale(1)" },
-          "25%": { transform: "translate(20px, -50px) scale(1.1)" },
-          "50%": { transform: "translate(-20px, 20px) scale(0.9)" },
-          "75%": { transform: "translate(50px, 50px) scale(1.05)" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -127,7 +121,6 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         shimmer: "shimmer 2s infinite linear",
         confetti: "confetti 3s ease-out forwards",
-        blob: "blob 7s infinite",
       },
     },
   },

@@ -164,22 +164,6 @@ interface GameState {
    * Get the title for current level
    */
   getLevelTitle: () => string;
-
-  /**
-   * Update user information (for login/registration)
-   * Updates name and email fields
-   */
-  setUser: (updates: Partial<Omit<User, 'id' | 'xp' | 'level' | 'streak' | 'badges' | 'createdAt' | 'lastActiveDate'>>) => void;
-
-  /**
-   * Check if user is currently logged in
-   */
-  isAuthenticated: () => boolean;
-
-  /**
-   * Logout user and clear session
-   */
-  logout: () => void;
 }
 
 /**
@@ -470,52 +454,6 @@ export const useGameStore = create<GameState>()(
        * @returns Current level title
        */
       getLevelTitle: () => getLevelTitle(get().user.level),
-
-      /**
-       * setUser - Update user information
-       * Used for login/registration to update name and email
-       * 
-       * @param updates - Partial user object with name/email to update
-       */
-      setUser: (updates) => {
-        set((state) => ({
-          user: {
-            ...state.user,
-            ...updates,
-          },
-        }));
-      },
-
-      /**
-       * isAuthenticated - Check if user is logged in
-       * Checks localStorage for valid auth session
-       * 
-       * @returns True if user has active session
-       */
-      isAuthenticated: () => {
-        return !!localStorage.getItem('auth-session');
-      },
-
-      /**
-       * logout - Clear user session
-       * Removes authentication token from localStorage
-       */
-      logout: () => {
-        localStorage.removeItem('auth-session');
-        // Reset user to default state
-        set({
-          user: {
-            id: 'user-1',
-            name: 'Learner',
-            xp: 0,
-            level: 1,
-            streak: 0,
-            lastActiveDate: new Date().toISOString().split('T')[0],
-            badges: [],
-            createdAt: new Date().toISOString(),
-          },
-        });
-      },
     }),
     {
       // Persist configuration - saves state to browser localStorage
