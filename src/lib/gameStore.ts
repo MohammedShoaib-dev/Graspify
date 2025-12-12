@@ -499,6 +499,7 @@ export const useGameStore = create<GameState>()(
       /**
        * logout - Clear user session
        * Removes authentication token from localStorage
+       * Note: Supabase signOut should be called separately in the component
        */
       logout: () => {
         localStorage.removeItem('auth-session');

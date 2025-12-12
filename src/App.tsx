@@ -42,27 +42,10 @@ import NotFound from "./pages/NotFound";
 
 // State management
 import { useGameStore } from "@/lib/gameStore";
+import { supabase } from "@/lib/supabase";
 
 // Create a React Query client for managing server state
 const queryClient = new QueryClient();
-
-/**
- * ProtectedRoute Component
- * Wrapper that redirects to login if user is not authenticated
- */
-interface ProtectedRouteProps {
-  element: React.ReactElement;
-}
-
-const ProtectedRoute = ({ element }: ProtectedRouteProps) => {
-  const isAuthenticated = useGameStore((state) => state.isAuthenticated());
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return element;
-};
 
 /**
  * App Component
@@ -73,15 +56,30 @@ const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication status on mount and listen for custom auth events
+  // Check authentication status on mount and listen for auth changes
   useEffect(() => {
-    const checkAuth = () => {
-      const authSession = localStorage.getItem("auth-session");
-      setIsAuthenticated(!!authSession);
-      setIsLoading(false);
+    // Check initial session
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setIsAuthenticated(!!session);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        setIsAuthenticated(false);
+        setIsLoading(false);
+      }
     };
 
     checkAuth();
+
+    // Listen for Supabase auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthenticated(!!session);
+      setIsLoading(false);
+    });
 
     // Listen for custom auth event (fired from Login component)
     const handleAuthChange = () => {
@@ -93,6 +91,7 @@ const App = () => {
     window.addEventListener("storage", handleAuthChange);
 
     return () => {
+      subscription.unsubscribe();
       window.removeEventListener("auth-changed", handleAuthChange);
       window.removeEventListener("storage", handleAuthChange);
     };
