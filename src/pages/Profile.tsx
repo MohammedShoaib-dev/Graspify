@@ -1,12 +1,31 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useGameStore } from '@/lib/gameStore';
-import { BadgeGrid } from '@/components/gamification/BadgeGrid';
+/**
+ * Profile Page Component
+ *
+ * Displays user's complete profile including:
+ * - User level and editable name
+ * - All achievements and badges
+ * - Comprehensive learning statistics
+ * - Profile customization options
+ */
+
+// React hooks
+import { useState } from "react";
+
+// UI components from shadcn
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+
+// Hooks and state management
+import { useToast } from "@/hooks/use-toast";
+import { useGameStore } from "@/lib/gameStore";
+
+// Gamification component
+import { BadgeGrid } from "@/components/gamification/BadgeGrid";
+
+// Icons from lucide-react
 import {
   User,
   Trophy,
@@ -18,18 +37,33 @@ import {
   Calendar,
   Edit2,
   Save,
-} from 'lucide-react';
+} from "lucide-react";
 
+/**
+ * Profile Component
+ *
+ * Displays comprehensive user profile with:
+ * - User level badge and editable name
+ * - All earned and available badges grid
+ * - Complete activity statistics
+ * - XP and level progress information
+ */
 export default function Profile() {
+  // Get game state and toast notifications
   const { toast } = useToast();
-  const { user, badges, stats, getLevelTitle, getLevelProgress } = useGameStore();
+  const { user, badges, stats, getLevelTitle, getLevelProgress } =
+    useGameStore();
   const levelProgress = getLevelProgress();
-  
+
+  // Local state for name editing
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user.name);
 
+  /**
+   * Handle profile name save
+   * Shows toast notification on success
+   */
   const handleSave = () => {
-    // In real app, would save to backend
     setIsEditing(false);
     toast({
       title: "Profile updated!",
@@ -37,19 +71,41 @@ export default function Profile() {
     });
   };
 
+  /**
+   * Array of statistic items to display
+   * Each item has a label, current value, and associated icon
+   */
   const statItems = [
-    { label: 'Quizzes Completed', value: stats.quizzesCompleted, icon: BookOpen },
-    { label: 'Flashcards Reviewed', value: stats.flashcardsReviewed, icon: Layers },
-    { label: 'Doubts Solved', value: stats.doubtsAsked, icon: MessageCircleQuestion },
-    { label: 'Correct Steps', value: stats.correctSteps, icon: Target },
-    { label: 'Study Plans Created', value: stats.studyPlansCreated, icon: Calendar },
-    { label: 'Steps Submitted', value: stats.stepsSubmitted, icon: Edit2 },
+    {
+      label: "Quizzes Completed",
+      value: stats.quizzesCompleted,
+      icon: BookOpen,
+    },
+    {
+      label: "Flashcards Reviewed",
+      value: stats.flashcardsReviewed,
+      icon: Layers,
+    },
+    {
+      label: "Doubts Solved",
+      value: stats.doubtsAsked,
+      icon: MessageCircleQuestion,
+    },
+    { label: "Correct Steps", value: stats.correctSteps, icon: Target },
+    {
+      label: "Study Plans Created",
+      value: stats.studyPlansCreated,
+      icon: Calendar,
+    },
+    { label: "Steps Submitted", value: stats.stepsSubmitted, icon: Edit2 },
   ];
 
-  const unlockedBadgesCount = badges.filter(b => b.unlocked).length;
+  // Count of unlocked badges
+  const unlockedBadgesCount = badges.filter((b) => b.unlocked).length;
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Page Header */}
       <div>
         <h1 className="text-3xl font-display font-bold">Profile</h1>
         <p className="text-muted-foreground mt-1">
@@ -58,19 +114,23 @@ export default function Profile() {
       </div>
 
       <div className="grid grid-cols-3 gap-6">
-        {/* Profile Card */}
+        {/* Profile Card - Left Section */}
         <Card>
           <CardContent className="pt-6">
             <div className="text-center">
+              {/* Level Badge */}
               <div className="relative inline-block mb-4">
                 <div className="w-24 h-24 rounded-full gradient-primary flex items-center justify-center text-4xl font-bold text-primary-foreground">
                   {user.level}
                 </div>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-background border-2 border-primary px-2 py-0.5 rounded-full">
-                  <span className="text-xs font-medium text-primary">Lvl {user.level}</span>
+                  <span className="text-xs font-medium text-primary">
+                    Lvl {user.level}
+                  </span>
                 </div>
               </div>
-              
+
+              {/* Editable Name Section */}
               {isEditing ? (
                 <div className="space-y-2 mb-4">
                   <Input
@@ -97,9 +157,9 @@ export default function Profile() {
                   </Button>
                 </>
               )}
-              
+
               <p className="text-primary font-medium mb-4">{getLevelTitle()}</p>
-              
+
               <div className="space-y-2 mb-6">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Progress</span>
@@ -112,19 +172,25 @@ export default function Profile() {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {levelProgress.current.toLocaleString()} / {levelProgress.next.toLocaleString()} XP to Level {user.level + 1}
+                  {levelProgress.current.toLocaleString()} /{" "}
+                  {levelProgress.next.toLocaleString()} XP to Level{" "}
+                  {user.level + 1}
                 </p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <p className="text-2xl font-bold text-primary">{user.xp.toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-primary">
+                    {user.xp.toLocaleString()}
+                  </p>
                   <p className="text-xs text-muted-foreground">Total XP</p>
                 </div>
                 <div className="p-3 rounded-lg bg-gradient-to-r from-orange-500/10 to-amber-500/10 border border-streak/20">
                   <div className="flex items-center justify-center gap-1">
                     <Flame className="w-5 h-5 text-streak" />
-                    <span className="text-2xl font-bold text-streak">{user.streak}</span>
+                    <span className="text-2xl font-bold text-streak">
+                      {user.streak}
+                    </span>
                   </div>
                   <p className="text-xs text-muted-foreground">Day Streak</p>
                 </div>
@@ -183,22 +249,28 @@ export default function Profile() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {badges.filter(b => b.unlocked).slice(-5).reverse().map((badge) => (
-              <div
-                key={badge.id}
-                className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
-              >
-                <span className="text-2xl">{badge.icon}</span>
-                <div className="flex-1">
-                  <p className="font-medium">Unlocked: {badge.name}</p>
-                  <p className="text-sm text-muted-foreground">{badge.description}</p>
+            {badges
+              .filter((b) => b.unlocked)
+              .slice(-5)
+              .reverse()
+              .map((badge) => (
+                <div
+                  key={badge.id}
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50"
+                >
+                  <span className="text-2xl">{badge.icon}</span>
+                  <div className="flex-1">
+                    <p className="font-medium">Unlocked: {badge.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {badge.description}
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-success">
+                    +{badge.xpReward} XP
+                  </Badge>
                 </div>
-                <Badge variant="secondary" className="text-success">
-                  +{badge.xpReward} XP
-                </Badge>
-              </div>
-            ))}
-            {badges.filter(b => b.unlocked).length === 0 && (
+              ))}
+            {badges.filter((b) => b.unlocked).length === 0 && (
               <p className="text-center text-muted-foreground py-8">
                 Complete challenges to unlock badges and see activity here!
               </p>

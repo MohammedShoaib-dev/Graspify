@@ -1,47 +1,116 @@
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useGameStore } from '@/lib/gameStore';
-import { Calendar, Plus, Trash2, Sparkles, CheckCircle2, Clock, BookOpen } from 'lucide-react';
-import { StudyPlan, ScheduleDay } from '@/types';
+/**
+ * Study Planner Page Component
+ *
+ * AI-powered study schedule generation for exam preparation:
+ * - Define subjects and chapters with difficulty levels
+ * - Set exam date and daily study hours
+ * - Generate optimized study schedules
+ * - Track chapter completion
+ * - Earn XP for creating plans
+ * - Visual calendar view of planned study sessions
+ */
 
+// React hooks
+import { useState } from "react";
+
+// UI components from shadcn
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+
+// Hooks and state
+import { useToast } from "@/hooks/use-toast";
+import { useGameStore } from "@/lib/gameStore";
+
+// Icons from lucide-react
+import {
+  Calendar,
+  Plus,
+  Trash2,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  BookOpen,
+} from "lucide-react";
+
+// Type definitions
+import { StudyPlan, ScheduleDay } from "@/types";
+
+/**
+ * Interface for chapter input during plan creation
+ */
 interface ChapterInput {
   name: string;
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
 }
 
+/**
+ * StudyPlanner Component
+ *
+ * Provides study schedule generation with:
+ * - Subject and chapter management
+ * - Difficulty-based time allocation
+ * - Exam date-based schedule generation
+ * - Visual study calendar
+ * - Progress tracking
+ */
 export default function StudyPlanner() {
+  // Hooks
   const { toast } = useToast();
   const { addXP, incrementStat, updateMissionProgress } = useGameStore();
-  
-  const [subject, setSubject] = useState('');
-  const [chapters, setChapters] = useState<ChapterInput[]>([{ name: '', difficulty: 'medium' }]);
-  const [examDate, setExamDate] = useState('');
-  const [dailyHours, setDailyHours] = useState('2');
+
+  // State for plan creation
+  const [subject, setSubject] = useState("");
+  const [chapters, setChapters] = useState<ChapterInput[]>([
+    { name: "", difficulty: "medium" },
+  ]);
+  const [examDate, setExamDate] = useState("");
+  const [dailyHours, setDailyHours] = useState("2");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPlan, setGeneratedPlan] = useState<StudyPlan | null>(null);
 
+  /**
+   * Add a new chapter input field
+   */
   const addChapter = () => {
-    setChapters([...chapters, { name: '', difficulty: 'medium' }]);
+    setChapters([...chapters, { name: "", difficulty: "medium" }]);
   };
 
+  /**
+   * Remove a chapter from the list
+   *
+   * @param index - Index of chapter to remove
+   */
   const removeChapter = (index: number) => {
     setChapters(chapters.filter((_, i) => i !== index));
   };
 
-  const updateChapter = (index: number, field: keyof ChapterInput, value: string) => {
+  /**
+   * Update a chapter's properties
+   *
+   * @param index - Chapter index
+   * @param field - Field to update (name or difficulty)
+   * @param value - New value
+   */
+  const updateChapter = (
+    index: number,
+    field: keyof ChapterInput,
+    value: string
+  ) => {
     const updated = [...chapters];
     updated[index] = { ...updated[index], [field]: value };
     setChapters(updated);
   };
 
+  /**
+   * Generate study plan from provided information
+   * Validates input and creates optimized schedule
+   */
   const generatePlan = async () => {
-    if (!subject || !examDate || chapters.some(c => !c.name)) {
+    if (!subject || !examDate || chapters.some((c) => !c.name)) {
       toast({
         title: "Missing information",
         description: "Please fill in all fields before generating a plan.",
@@ -53,28 +122,32 @@ export default function StudyPlanner() {
     setIsGenerating(true);
 
     // Simulate AI generation (replace with actual API call)
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const today = new Date();
     const exam = new Date(examDate);
-    const daysUntilExam = Math.ceil((exam.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    
+    const daysUntilExam = Math.ceil(
+      (exam.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+    );
+
     // Generate mock schedule
     const schedule: ScheduleDay[] = [];
     let currentDate = new Date(today);
     let chapterIndex = 0;
-    
+
     for (let i = 0; i < Math.min(daysUntilExam, 14); i++) {
       const chapter = chapters[chapterIndex % chapters.length];
       schedule.push({
-        date: currentDate.toISOString().split('T')[0],
-        tasks: [{
-          chapterId: `ch-${chapterIndex}`,
-          chapterName: chapter.name,
-          subject,
-          hours: parseFloat(dailyHours),
-          completed: false,
-        }],
+        date: currentDate.toISOString().split("T")[0],
+        tasks: [
+          {
+            chapterId: `ch-${chapterIndex}`,
+            chapterName: chapter.name,
+            subject,
+            hours: parseFloat(dailyHours),
+            completed: false,
+          },
+        ],
       });
       currentDate.setDate(currentDate.getDate() + 1);
       chapterIndex++;
@@ -87,7 +160,8 @@ export default function StudyPlanner() {
         id: `ch-${i}`,
         name: c.name,
         difficulty: c.difficulty,
-        estimatedHours: c.difficulty === 'hard' ? 6 : c.difficulty === 'medium' ? 4 : 2,
+        estimatedHours:
+          c.difficulty === "hard" ? 6 : c.difficulty === "medium" ? 4 : 2,
         completed: false,
       })),
       examDate,
@@ -98,11 +172,11 @@ export default function StudyPlanner() {
 
     setGeneratedPlan(plan);
     setIsGenerating(false);
-    
-    incrementStat('studyPlansCreated');
-    updateMissionProgress('study');
-    const { xpGained } = addXP('complete_quiz', 30);
-    
+
+    incrementStat("studyPlansCreated");
+    updateMissionProgress("study");
+    const { xpGained } = addXP("complete_quiz", 30);
+
     toast({
       title: "Study plan generated! 📚",
       description: `You earned ${xpGained} XP. ${daysUntilExam} days until your exam.`,
@@ -111,17 +185,17 @@ export default function StudyPlanner() {
 
   const toggleTaskComplete = (dayIndex: number, taskIndex: number) => {
     if (!generatedPlan) return;
-    
+
     const updated = { ...generatedPlan };
-    updated.schedule[dayIndex].tasks[taskIndex].completed = 
+    updated.schedule[dayIndex].tasks[taskIndex].completed =
       !updated.schedule[dayIndex].tasks[taskIndex].completed;
     setGeneratedPlan(updated);
   };
 
   const difficultyColors = {
-    easy: 'bg-success/20 text-success border-success/30',
-    medium: 'bg-warning/20 text-warning border-warning/30',
-    hard: 'bg-destructive/20 text-destructive border-destructive/30',
+    easy: "bg-success/20 text-success border-success/30",
+    medium: "bg-warning/20 text-warning border-warning/30",
+    hard: "bg-destructive/20 text-destructive border-destructive/30",
   };
 
   return (
@@ -161,12 +235,16 @@ export default function StudyPlanner() {
                     <Input
                       placeholder={`Chapter ${index + 1}`}
                       value={chapter.name}
-                      onChange={(e) => updateChapter(index, 'name', e.target.value)}
+                      onChange={(e) =>
+                        updateChapter(index, "name", e.target.value)
+                      }
                       className="flex-1"
                     />
                     <select
                       value={chapter.difficulty}
-                      onChange={(e) => updateChapter(index, 'difficulty', e.target.value)}
+                      onChange={(e) =>
+                        updateChapter(index, "difficulty", e.target.value)
+                      }
                       className="px-3 py-2 rounded-lg border border-input bg-background text-sm"
                     >
                       <option value="easy">Easy</option>
@@ -186,7 +264,12 @@ export default function StudyPlanner() {
                   </div>
                 ))}
               </div>
-              <Button variant="outline" size="sm" onClick={addChapter} className="mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={addChapter}
+                className="mt-2"
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Chapter
               </Button>
@@ -200,7 +283,7 @@ export default function StudyPlanner() {
                   type="date"
                   value={examDate}
                   onChange={(e) => setExamDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toISOString().split("T")[0]}
                 />
               </div>
               <div className="space-y-2">
@@ -254,10 +337,10 @@ export default function StudyPlanner() {
                   >
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">
-                        {new Date(day.date).toLocaleDateString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
+                        {new Date(day.date).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
                         })}
                       </span>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -270,25 +353,35 @@ export default function StudyPlanner() {
                         key={task.chapterId}
                         className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
                           task.completed
-                            ? 'bg-success/10 border border-success/30'
-                            : 'bg-background hover:bg-muted/50'
+                            ? "bg-success/10 border border-success/30"
+                            : "bg-background hover:bg-muted/50"
                         }`}
                         onClick={() => toggleTaskComplete(dayIndex, taskIndex)}
                       >
                         <div
                           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
                             task.completed
-                              ? 'bg-success border-success text-success-foreground'
-                              : 'border-muted-foreground'
+                              ? "bg-success border-success text-success-foreground"
+                              : "border-muted-foreground"
                           }`}
                         >
-                          {task.completed && <CheckCircle2 className="w-3 h-3" />}
+                          {task.completed && (
+                            <CheckCircle2 className="w-3 h-3" />
+                          )}
                         </div>
                         <div className="flex-1">
-                          <p className={`text-sm ${task.completed ? 'line-through text-muted-foreground' : ''}`}>
+                          <p
+                            className={`text-sm ${
+                              task.completed
+                                ? "line-through text-muted-foreground"
+                                : ""
+                            }`}
+                          >
                             {task.chapterName}
                           </p>
-                          <p className="text-xs text-muted-foreground">{task.subject}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {task.subject}
+                          </p>
                         </div>
                       </div>
                     ))}
