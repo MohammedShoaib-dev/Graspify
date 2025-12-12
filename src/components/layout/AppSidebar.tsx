@@ -9,7 +9,11 @@
  */
 
 // React Router hooks for navigation
+<<<<<<< HEAD
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
+=======
+import { NavLink, useLocation } from "react-router-dom";
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
 
 // Icon imports from lucide-react
 import {
@@ -21,7 +25,10 @@ import {
   Trophy, // Leaderboard icon
   User, // Profile icon
   Sparkles, // Logo icon
+<<<<<<< HEAD
   LogOut, // Logout icon
+=======
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
 } from "lucide-react";
 
 // Utility function for combining classnames
@@ -125,7 +132,11 @@ export function AppSidebar() {
       </nav>
 
       {/* User Stats Card - Bottom Section */}
+<<<<<<< HEAD
       <div className="p-4 border-t border-sidebar-border space-y-3">
+=======
+      <div className="p-4 border-t border-sidebar-border">
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
         <div className="bg-sidebar-accent rounded-xl p-4">
           {/* User Level and Name */}
           <div className="flex items-center gap-3 mb-3">

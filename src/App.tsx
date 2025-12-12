@@ -5,12 +5,17 @@
  * - All necessary providers (React Query, Routing, UI components)
  * - Application routes/pages
  * - Notification systems (Toast, Sonner notifications, Tooltips)
+<<<<<<< HEAD
  * - Protected routes with authentication
  */
 
 // React hooks
 import { useEffect, useState } from "react";
 
+=======
+ */
+
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
 // Toast notification component from shadcn/ui
 import { Toaster } from "@/components/ui/toaster";
 
@@ -24,7 +29,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // React Router - for client-side routing and navigation
+<<<<<<< HEAD
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+=======
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
 
 // Main layout component that wraps all pages
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -40,13 +49,17 @@ import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import NotFound from "./pages/NotFound";
 
+<<<<<<< HEAD
 // State management
 import { useGameStore } from "@/lib/gameStore";
 
+=======
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
 // Create a React Query client for managing server state
 const queryClient = new QueryClient();
 
 /**
+<<<<<<< HEAD
  * ProtectedRoute Component
  * Wrapper that redirects to login if user is not authenticated
  */
@@ -170,5 +183,54 @@ const App = () => {
     </QueryClientProvider>
   );
 };
+=======
+ * App Component
+ * Wraps the entire application with necessary providers and sets up routes
+ */
+const App = () => (
+  // React Query provider - enables useQuery and other data fetching hooks
+  <QueryClientProvider client={queryClient}>
+    {/* Tooltip provider - enables tooltips for UI elements */}
+    <TooltipProvider>
+      {/* Toast notification systems - for displaying notifications */}
+      <Toaster />
+      <Sonner />
+
+      {/* Browser Router - enables client-side routing */}
+      <BrowserRouter>
+        {/* App Layout - provides sidebar, header, and main layout structure */}
+        <AppLayout>
+          {/* Route definitions for all pages in the application */}
+          <Routes>
+            {/* Dashboard - home page showing user overview */}
+            <Route path="/" element={<Dashboard />} />
+
+            {/* Study Planner - for creating and managing study schedules */}
+            <Route path="/study-planner" element={<StudyPlanner />} />
+
+            {/* Quiz Generator - create and take quizzes */}
+            <Route path="/quiz" element={<QuizGenerator />} />
+
+            {/* Flashcards - study using flashcard system */}
+            <Route path="/flashcards" element={<Flashcards />} />
+
+            {/* Doubt Solver - AI-powered Q&A system */}
+            <Route path="/doubt-solver" element={<DoubtSolver />} />
+
+            {/* Leaderboard - view user rankings and achievements */}
+            <Route path="/leaderboard" element={<Leaderboard />} />
+
+            {/* Profile - user profile and settings */}
+            <Route path="/profile" element={<Profile />} />
+
+            {/* Catch-all route - displays 404 page for undefined routes */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppLayout>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+>>>>>>> a58625c0be656531989b10c12c41591adad071f0
 
 export default App;
