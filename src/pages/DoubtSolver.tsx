@@ -1,11 +1,32 @@
-import { useState, useRef, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { useToast } from '@/hooks/use-toast';
-import { useGameStore } from '@/lib/gameStore';
-import { Confetti } from '@/components/gamification/Confetti';
+/**
+ * Doubt Solver Page Component
+ *
+ * AI-powered Q&A system for learning support:
+ * - Chat interface with AI tutor
+ * - Image upload for problem solving (OCR)
+ * - Step-by-step solution verification
+ * - Confidence scoring for explanations
+ * - Solution tracking and history
+ * - XP rewards for solving doubts
+ */
+
+// React hooks
+import { useState, useRef, useEffect } from "react";
+
+// UI components from shadcn
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+
+// Hooks and state
+import { useToast } from "@/hooks/use-toast";
+import { useGameStore } from "@/lib/gameStore";
+
+// Gamification components
+import { Confetti } from "@/components/gamification/Confetti";
+
+// Icons from lucide-react
 import {
   Send,
   Upload,
@@ -18,102 +39,139 @@ import {
   User,
   Zap,
   HelpCircle,
-} from 'lucide-react';
-import { DoubtMessage, StepCheck } from '@/types';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
 
+// Type definitions
+import { DoubtMessage, StepCheck } from "@/types";
+import { cn } from "@/lib/utils";
+
+/**
+ * Mock AI tutor responses
+ * In production, these would come from an AI API
+ */
 const mockResponses = [
   {
-    content: "I see you're working on this calculus problem! Let me help you break it down step by step. What's your first approach to solving ∫(x² + 3x)dx?",
-    type: 'question',
+    content:
+      "I see you're working on this calculus problem! Let me help you break it down step by step. What's your first approach to solving ∫(x² + 3x)dx?",
+    type: "question",
   },
   {
-    content: "Great start! You've correctly identified that we need to apply the power rule. For x², the integral would be x³/3. Now, what would be the integral of 3x?",
-    step: { correct: true, explanation: "Using the power rule correctly", confidence: 0.95 },
+    content:
+      "Great start! You've correctly identified that we need to apply the power rule. For x², the integral would be x³/3. Now, what would be the integral of 3x?",
+    step: {
+      correct: true,
+      explanation: "Using the power rule correctly",
+      confidence: 0.95,
+    },
   },
   {
-    content: "Almost there! Remember that when integrating 3x, you need to increase the exponent by 1 and divide by the new exponent. So 3x becomes 3x²/2. Don't forget to add the constant of integration C!",
-    step: { correct: false, explanation: "Minor calculation error in the coefficient", hint: "Remember: ∫ax^n dx = ax^(n+1)/(n+1)", confidence: 0.88 },
+    content:
+      "Almost there! Remember that when integrating 3x, you need to increase the exponent by 1 and divide by the new exponent. So 3x becomes 3x²/2. Don't forget to add the constant of integration C!",
+    step: {
+      correct: false,
+      explanation: "Minor calculation error in the coefficient",
+      hint: "Remember: ∫ax^n dx = ax^(n+1)/(n+1)",
+      confidence: 0.88,
+    },
   },
 ];
 
+/**
+ * DoubtSolver Component
+ *
+ * Provides AI tutoring with:
+ * - Natural conversation interface
+ * - Step verification and feedback
+ * - Image upload and OCR support
+ * - Detailed explanations with hints
+ * - Session history and tracking
+ * - XP rewards for engagement
+ */
 export default function DoubtSolver() {
+  // Hooks
   const { toast } = useToast();
   const { addXP, incrementStat, updateMissionProgress } = useGameStore();
-  
+
+  // State for chat
   const [messages, setMessages] = useState<DoubtMessage[]>([
     {
-      id: '1',
-      role: 'assistant',
-      content: "Hi! 👋 I'm your AI tutor. Upload a problem image or type your question, and I'll help you solve it step by step. I'll verify each step you take!",
+      id: "1",
+      role: "assistant",
+      content:
+        "Hi! 👋 I'm your AI tutor. Upload a problem image or type your question, and I'll help you solve it step by step. I'll verify each step you take!",
       timestamp: new Date().toISOString(),
     },
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
-    
+
     const userMessage: DoubtMessage = {
       id: `msg-${Date.now()}`,
-      role: 'user',
+      role: "user",
       content: input,
       timestamp: new Date().toISOString(),
     };
-    
+
     setMessages([...messages, userMessage]);
-    setInput('');
+    setInput("");
     setIsLoading(true);
-    
-    incrementStat('stepsSubmitted');
-    addXP('submit_step');
-    
+
+    incrementStat("stepsSubmitted");
+    addXP("submit_step");
+
     // Simulate AI response
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const responseIndex = Math.min(messages.filter(m => m.role === 'assistant').length, mockResponses.length - 1);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const responseIndex = Math.min(
+      messages.filter((m) => m.role === "assistant").length,
+      mockResponses.length - 1
+    );
     const mockResponse = mockResponses[responseIndex];
-    
+
     const assistantMessage: DoubtMessage = {
       id: `msg-${Date.now()}-ai`,
-      role: 'assistant',
+      role: "assistant",
       content: mockResponse.content,
-      step: mockResponse.step ? {
-        userStep: input,
-        correct: mockResponse.step.correct,
-        explanation: mockResponse.step.explanation,
-        hint: mockResponse.step.hint,
-        confidence: mockResponse.step.confidence,
-      } : undefined,
+      step: mockResponse.step
+        ? {
+            userStep: input,
+            correct: mockResponse.step.correct,
+            explanation: mockResponse.step.explanation,
+            hint: mockResponse.step.hint,
+            confidence: mockResponse.step.confidence,
+          }
+        : undefined,
       timestamp: new Date().toISOString(),
     };
-    
-    setMessages(prev => [...prev, assistantMessage]);
+
+    setMessages((prev) => [...prev, assistantMessage]);
     setIsLoading(false);
-    
+
     if (mockResponse.step?.correct) {
-      incrementStat('correctSteps');
-      const { xpGained } = addXP('correct_step');
+      incrementStat("correctSteps");
+      const { xpGained } = addXP("correct_step");
       setShowConfetti(true);
       toast({
         title: "Correct step! ✅",
         description: `Great work! +${xpGained} XP`,
       });
     }
-    
-    incrementStat('doubtsAsked');
-    updateMissionProgress('doubt');
+
+    incrementStat("doubtsAsked");
+    updateMissionProgress("doubt");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
@@ -121,28 +179,29 @@ export default function DoubtSolver() {
 
   const requestHint = async () => {
     setIsLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
     const hintMessage: DoubtMessage = {
       id: `msg-${Date.now()}-hint`,
-      role: 'assistant',
-      content: "💡 **Hint:** Try breaking down the problem into smaller parts. For integrals, identify each term separately and apply the power rule to each one.",
+      role: "assistant",
+      content:
+        "💡 **Hint:** Try breaking down the problem into smaller parts. For integrals, identify each term separately and apply the power rule to each one.",
       timestamp: new Date().toISOString(),
     };
-    
+
     setMessages([...messages, hintMessage]);
     setIsLoading(false);
   };
 
   const requestFullSolution = async () => {
     setIsLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     const solutionMessage: DoubtMessage = {
       id: `msg-${Date.now()}-solution`,
-      role: 'assistant',
+      role: "assistant",
       content: `📚 **Full Solution:**
 
 Given: ∫(x² + 3x)dx
@@ -162,7 +221,7 @@ Given: ∫(x² + 3x)dx
 ✅ Verified by math engine`,
       timestamp: new Date().toISOString(),
     };
-    
+
     setMessages([...messages, solutionMessage]);
     setIsLoading(false);
   };
@@ -170,7 +229,7 @@ Given: ∫(x² + 3x)dx
   return (
     <div className="h-[calc(100vh-180px)] flex flex-col animate-fade-in">
       <Confetti show={showConfetti} onComplete={() => setShowConfetti(false)} />
-      
+
       <div className="mb-4">
         <h1 className="text-3xl font-display font-bold">Doubt Solver</h1>
         <p className="text-muted-foreground mt-1">
@@ -186,40 +245,38 @@ Given: ∫(x² + 3x)dx
               <div
                 key={message.id}
                 className={cn(
-                  'flex gap-3 animate-fade-in',
-                  message.role === 'user' ? 'flex-row-reverse' : ''
+                  "flex gap-3 animate-fade-in",
+                  message.role === "user" ? "flex-row-reverse" : ""
                 )}
               >
                 <div
                   className={cn(
-                    'w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0',
-                    message.role === 'user'
-                      ? 'gradient-primary'
-                      : 'bg-muted'
+                    "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                    message.role === "user" ? "gradient-primary" : "bg-muted"
                   )}
                 >
-                  {message.role === 'user' ? (
+                  {message.role === "user" ? (
                     <User className="w-4 h-4 text-primary-foreground" />
                   ) : (
                     <Bot className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
-                
+
                 <div
                   className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-3',
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
+                    "max-w-[80%] rounded-2xl px-4 py-3",
+                    message.role === "user"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
                   )}
                 >
                   {message.step && (
                     <div
                       className={cn(
-                        'flex items-center gap-2 mb-2 pb-2 border-b',
+                        "flex items-center gap-2 mb-2 pb-2 border-b",
                         message.step.correct
-                          ? 'border-success/30 text-success'
-                          : 'border-destructive/30 text-destructive'
+                          ? "border-success/30 text-success"
+                          : "border-destructive/30 text-destructive"
                       )}
                     >
                       {message.step.correct ? (
@@ -228,32 +285,33 @@ Given: ∫(x² + 3x)dx
                         <XCircle className="w-4 h-4" />
                       )}
                       <span className="text-sm font-medium">
-                        {message.step.correct ? 'Correct!' : 'Needs adjustment'}
+                        {message.step.correct ? "Correct!" : "Needs adjustment"}
                       </span>
-                      <Badge
-                        variant="secondary"
-                        className="ml-auto text-xs"
-                      >
+                      <Badge variant="secondary" className="ml-auto text-xs">
                         {Math.round(message.step.confidence * 100)}% confidence
                       </Badge>
                     </div>
                   )}
-                  
-                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                  
+
+                  <p className="text-sm whitespace-pre-wrap">
+                    {message.content}
+                  </p>
+
                   {message.step?.hint && (
                     <div className="mt-3 p-2 rounded-lg bg-warning/10 border border-warning/30">
                       <div className="flex items-center gap-2 text-warning text-xs font-medium mb-1">
                         <Lightbulb className="w-3 h-3" />
                         Hint
                       </div>
-                      <p className="text-xs text-muted-foreground">{message.step.hint}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {message.step.hint}
+                      </p>
                     </div>
                   )}
                 </div>
               </div>
             ))}
-            
+
             {isLoading && (
               <div className="flex gap-3">
                 <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
@@ -261,9 +319,18 @@ Given: ∫(x² + 3x)dx
                 </div>
                 <div className="bg-muted rounded-2xl px-4 py-3">
                   <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span
+                      className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce"
+                      style={{ animationDelay: "0ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce"
+                      style={{ animationDelay: "150ms" }}
+                    />
+                    <span
+                      className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce"
+                      style={{ animationDelay: "300ms" }}
+                    />
                   </div>
                 </div>
               </div>
@@ -299,7 +366,7 @@ Given: ∫(x² + 3x)dx
                 Full Solution
               </Button>
             </div>
-            
+
             <div className="flex gap-2">
               <Textarea
                 placeholder="Type your step or question... (Shift+Enter for new line)"
@@ -316,7 +383,7 @@ Given: ∫(x² + 3x)dx
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-            
+
             <div className="flex items-center justify-center gap-2 mt-2 text-xs text-muted-foreground">
               <Zap className="w-3 h-3" />
               <span>+2 XP per step submitted</span>
