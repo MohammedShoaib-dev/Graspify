@@ -233,3 +233,11 @@
 .flip-card-back {
   transform: rotateY(180deg);
 }
+/* Animation delays for staggered animations */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}

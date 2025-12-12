@@ -9,7 +9,7 @@
  */
 
 // React Router hooks for navigation
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 
 // Icon imports from lucide-react
 import {
@@ -21,6 +21,7 @@ import {
   Trophy, // Leaderboard icon
   User, // Profile icon
   Sparkles, // Logo icon
+  LogOut, // Logout icon
 } from "lucide-react";
 
 // Utility function for combining classnames
@@ -124,7 +125,7 @@ export function AppSidebar() {
       </nav>
 
       {/* User Stats Card - Bottom Section */}
-      <div className="p-4 border-t border-sidebar-border">
+      <div className="p-4 border-t border-sidebar-border space-y-3">
         <div className="bg-sidebar-accent rounded-xl p-4">
           {/* User Level and Name */}
           <div className="flex items-center gap-3 mb-3">
@@ -167,7 +168,43 @@ export function AppSidebar() {
             </div>
           </div>
         </div>
+
+        {/* Logout Button */}
+        <LogoutButton />
       </div>
     </aside>
+  );
+}
+
+/**
+ * LogoutButton Component
+ *
+ * Displays logout button in sidebar footer
+ * Clears session and redirects to login on click
+ */
+function LogoutButton() {
+  const navigate = useNavigate();
+  const logout = useGameStore((state) => state.logout);
+
+  const handleLogout = () => {
+    // Clear session and reset game state
+    logout();
+
+    // Redirect to login page
+    navigate("/login", { replace: true });
+  };
+
+  return (
+    <button
+      onClick={handleLogout}
+      className={cn(
+        "w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all duration-200",
+        "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-primary",
+        "text-sm font-medium"
+      )}
+    >
+      <LogOut className="w-4 h-4" />
+      <span>Logout</span>
+    </button>
   );
 }

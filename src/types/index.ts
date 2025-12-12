@@ -16,6 +16,7 @@
 export interface User {
   id: string;              // Unique user identifier
   name: string;            // Display name
+  email?: string;          // User email address (from authentication)
   avatar?: string;         // Optional profile picture URL
   xp: number;              // Total experience points
   level: number;           // Current level (derived from XP)
