@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 
 // Game state management
 import { useGameStore } from "@/lib/gameStore";
+import { supabase } from "@/lib/supabase";
 
 /**
  * Navigation items configuration
@@ -186,12 +187,22 @@ function LogoutButton() {
   const navigate = useNavigate();
   const logout = useGameStore((state) => state.logout);
 
-  const handleLogout = () => {
-    // Clear session and reset game state
-    logout();
+  const handleLogout = async () => {
+    try {
+      // Sign out from Supabase
+      await supabase.auth.signOut();
+      
+      // Clear session and reset game state
+      logout();
 
-    // Redirect to login page
-    navigate("/login", { replace: true });
+      // Redirect to login page
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still logout locally even if Supabase signout fails
+      logout();
+      navigate("/login", { replace: true });
+    }
   };
 
   return (

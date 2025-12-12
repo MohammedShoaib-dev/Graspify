@@ -31,28 +31,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 // Hooks and state
 import { useToast } from "@/hooks/use-toast";
 import { useGameStore } from "@/lib/gameStore";
+import { supabase } from "@/lib/supabase";
 
 // Icons from lucide-react
-import { LogIn, UserPlus, AlertCircle } from "lucide-react";
-
-/**
- * Mock user database for authentication
- * In production, this would be replaced with API calls to backend
- */
-const MOCK_USERS = [
-  {
-    id: "user-1",
-    email: "student@example.com",
-    password: "password123",
-    name: "Student",
-  },
-  {
-    id: "user-2",
-    email: "learner@example.com",
-    password: "learning456",
-    name: "Learner",
-  },
-];
+import { LogIn, UserPlus, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 /**
  * Login Component
@@ -77,6 +59,7 @@ export default function Login() {
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [isLoginLoading, setIsLoginLoading] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   // Registration form state
   const [registerEmail, setRegisterEmail] = useState("");
@@ -84,6 +67,8 @@ export default function Login() {
   const [registerName, setRegisterName] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   /**
    * Validate email format
@@ -98,7 +83,7 @@ export default function Login() {
 
   /**
    * Handle login form submission
-   * Validates credentials and creates session
+   * Validates credentials and authenticates with Supabase
    */
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -124,34 +109,44 @@ export default function Login() {
 
     setIsLoginLoading(true);
 
-    // Simulate API call with 1-second delay
-    setTimeout(() => {
-      // Check credentials against mock database
-      const user = MOCK_USERS.find(
-        (u) => u.email === loginEmail && u.password === loginPassword
-      );
+    try {
+      // Sign in with Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
 
-      if (user) {
-        // Store authentication session
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        // Get user metadata (name from user_metadata or profile)
+        const userName = data.user.user_metadata?.name || 
+                         data.user.user_metadata?.full_name || 
+                         data.user.email?.split('@')[0] || 
+                         'User';
+
+        // Update game store with user info
+        setUser({
+          name: userName,
+          email: loginEmail,
+        });
+
+        // Store minimal session info for compatibility
         localStorage.setItem(
           "auth-session",
           JSON.stringify({
-            userId: user.id,
-            email: user.email,
-            name: user.name,
+            userId: data.user.id,
+            email: data.user.email,
+            name: userName,
             loginTime: new Date().toISOString(),
           })
         );
 
-        // Update game store with user info
-        setUser({
-          name: user.name,
-          email: loginEmail,
-        });
-
         toast({
           title: "Login successful",
-          description: `Welcome back, ${user.name}!`,
+          description: `Welcome back, ${userName}!`,
         });
 
         // Dispatch custom event to notify App of auth change
@@ -161,22 +156,22 @@ export default function Login() {
         setTimeout(() => {
           navigate("/");
         }, 500);
-      } else {
-        toast({
-          title: "Login failed",
-          description:
-            "Invalid email or password. Try user@example.com / password123",
-          variant: "destructive",
-        });
       }
-
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoginLoading(false);
-    }, 1000);
+    }
   };
 
   /**
    * Handle registration form submission
-   * Creates new account with provided credentials
+   * Creates new account with Supabase authentication
    */
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,62 +218,75 @@ export default function Login() {
       return;
     }
 
-    if (MOCK_USERS.some((u) => u.email === registerEmail)) {
-      toast({
-        title: "Email already registered",
-        description: "This email is already associated with an account.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsRegisterLoading(true);
 
-    // Simulate API call with 1-second delay
-    setTimeout(() => {
-      // Create new user
-      const newUser = {
-        id: `user-${Date.now()}`,
+    try {
+      // Sign up with Supabase (includes name in user_metadata)
+      const { data, error } = await supabase.auth.signUp({
         email: registerEmail,
         password: registerPassword,
-        name: registerName,
-      };
-
-      // In real app, this would be saved to backend
-      MOCK_USERS.push(newUser);
-
-      // Store authentication session
-      localStorage.setItem(
-        "auth-session",
-        JSON.stringify({
-          userId: newUser.id,
-          email: newUser.email,
-          name: newUser.name,
-          loginTime: new Date().toISOString(),
-        })
-      );
-
-      // Update game store with user info
-      setUser({
-        name: newUser.name,
-        email: registerEmail,
+        options: {
+          data: {
+            name: registerName,
+            full_name: registerName,
+          },
+        },
       });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        // Update game store with user info
+        setUser({
+          name: registerName,
+          email: registerEmail,
+        });
+
+        // Store minimal session info for compatibility
+        localStorage.setItem(
+          "auth-session",
+          JSON.stringify({
+            userId: data.user.id,
+            email: data.user.email,
+            name: registerName,
+            loginTime: new Date().toISOString(),
+          })
+        );
+
+        toast({
+          title: "Account created",
+          description: `Welcome, ${registerName}! Your account has been created.`,
+        });
+
+        // Dispatch custom event to notify App of auth change
+        window.dispatchEvent(new Event("auth-changed"));
+
+        // Redirect to dashboard after a brief delay
+        setTimeout(() => {
+          navigate("/");
+        }, 500);
+      }
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      // Handle specific error cases
+      let errorMessage = "Failed to create account. Please try again.";
+      if (error.message.includes("already registered")) {
+        errorMessage = "This email is already associated with an account.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
 
       toast({
-        title: "Account created",
-        description: `Welcome, ${registerName}! Your account has been created.`,
+        title: "Registration failed",
+        description: errorMessage,
+        variant: "destructive",
       });
-
-      // Dispatch custom event to notify App of auth change
-      window.dispatchEvent(new Event("auth-changed"));
-
-      // Redirect to dashboard after a brief delay
-      setTimeout(() => {
-        navigate("/");
-      }, 500);
-
+    } finally {
       setIsRegisterLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -329,23 +337,31 @@ export default function Login() {
 
                   <div className="space-y-2">
                     <Label htmlFor="login-password">Password</Label>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={loginPassword}
-                      onChange={(e) => setLoginPassword(e.target.value)}
-                      disabled={isLoginLoading}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showLoginPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
+                        disabled={isLoginLoading}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword(!showLoginPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        disabled={isLoginLoading}
+                      >
+                        {showLoginPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
-                    <p className="font-semibold text-blue-900 mb-1">
-                      Demo Credentials:
-                    </p>
-                    <p className="text-blue-800">📧 student@example.com</p>
-                    <p className="text-blue-800">🔐 password123</p>
-                  </div>
 
                   <Button
                     type="submit"
@@ -386,26 +402,56 @@ export default function Login() {
 
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Password</Label>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="At least 6 characters"
-                      value={registerPassword}
-                      onChange={(e) => setRegisterPassword(e.target.value)}
-                      disabled={isRegisterLoading}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="register-password"
+                        type={showRegisterPassword ? "text" : "password"}
+                        placeholder="At least 6 characters"
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        disabled={isRegisterLoading}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        disabled={isRegisterLoading}
+                      >
+                        {showRegisterPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="register-confirm">Confirm Password</Label>
-                    <Input
-                      id="register-confirm"
-                      type="password"
-                      placeholder="Confirm your password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      disabled={isRegisterLoading}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="register-confirm"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirm your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        disabled={isRegisterLoading}
+                        className="pr-10"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        disabled={isRegisterLoading}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   <Button
