@@ -127,7 +127,7 @@ export function XPBar() {
           <div>
             {/* Total XP amount */}
             <p className="text-lg font-bold leading-none text-primary">
-              {user.xp.toLocaleString()}
+              {(user.xp ?? 0).toLocaleString()}
             </p>
             {/* Total label */}
             <p className="text-xs text-muted-foreground">total</p>

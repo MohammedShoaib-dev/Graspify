@@ -39,6 +39,9 @@ import {
 // Type definitions
 import { StudyPlan, ScheduleDay } from "@/types";
 
+// AI integration
+import { generateStudyPlan } from "@/lib/gemini";
+
 /**
  * Interface for chapter input during plan creation
  */
@@ -107,7 +110,7 @@ export default function StudyPlanner() {
 
   /**
    * Generate study plan from provided information
-   * Validates input and creates optimized schedule
+   * Uses Gemini AI to create optimized study schedule
    */
   const generatePlan = async () => {
     if (!subject || !examDate || chapters.some((c) => !c.name)) {
@@ -121,66 +124,59 @@ export default function StudyPlanner() {
 
     setIsGenerating(true);
 
-    // Simulate AI generation (replace with actual API call)
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Call Gemini API to generate optimized schedule
+      const schedule = await generateStudyPlan(
+        subject,
+        chapters,
+        examDate,
+        parseFloat(dailyHours)
+      );
 
-    const today = new Date();
-    const exam = new Date(examDate);
-    const daysUntilExam = Math.ceil(
-      (exam.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-    );
+      // Create study plan with AI-generated schedule
+      const plan: StudyPlan = {
+        id: `plan-${Date.now()}`,
+        subject,
+        chapters: chapters.map((c, i) => ({
+          id: `ch-${i}`,
+          name: c.name,
+          difficulty: c.difficulty,
+          estimatedHours:
+            c.difficulty === "hard" ? 6 : c.difficulty === "medium" ? 4 : 2,
+          completed: false,
+        })),
+        examDate,
+        dailyHours: parseFloat(dailyHours),
+        schedule,
+        createdAt: new Date().toISOString(),
+      };
 
-    // Generate mock schedule
-    const schedule: ScheduleDay[] = [];
-    let currentDate = new Date(today);
-    let chapterIndex = 0;
+      setGeneratedPlan(plan);
 
-    for (let i = 0; i < Math.min(daysUntilExam, 14); i++) {
-      const chapter = chapters[chapterIndex % chapters.length];
-      schedule.push({
-        date: currentDate.toISOString().split("T")[0],
-        tasks: [
-          {
-            chapterId: `ch-${chapterIndex}`,
-            chapterName: chapter.name,
-            subject,
-            hours: parseFloat(dailyHours),
-            completed: false,
-          },
-        ],
+      const today = new Date();
+      const exam = new Date(examDate);
+      const daysUntilExam = Math.ceil(
+        (exam.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      incrementStat("studyPlansCreated");
+      updateMissionProgress("study");
+      const { xpGained } = addXP("complete_quiz", 30);
+
+      toast({
+        title: "Study plan generated! 📚",
+        description: `You earned ${xpGained} XP. ${daysUntilExam} days until your exam.`,
       });
-      currentDate.setDate(currentDate.getDate() + 1);
-      chapterIndex++;
+    } catch (error) {
+      console.error("Error generating study plan:", error);
+      toast({
+        title: "Error generating plan",
+        description: "Failed to generate study plan. Please check your input and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
     }
-
-    const plan: StudyPlan = {
-      id: `plan-${Date.now()}`,
-      subject,
-      chapters: chapters.map((c, i) => ({
-        id: `ch-${i}`,
-        name: c.name,
-        difficulty: c.difficulty,
-        estimatedHours:
-          c.difficulty === "hard" ? 6 : c.difficulty === "medium" ? 4 : 2,
-        completed: false,
-      })),
-      examDate,
-      dailyHours: parseFloat(dailyHours),
-      schedule,
-      createdAt: new Date().toISOString(),
-    };
-
-    setGeneratedPlan(plan);
-    setIsGenerating(false);
-
-    incrementStat("studyPlansCreated");
-    updateMissionProgress("study");
-    const { xpGained } = addXP("complete_quiz", 30);
-
-    toast({
-      title: "Study plan generated! 📚",
-      description: `You earned ${xpGained} XP. ${daysUntilExam} days until your exam.`,
-    });
   };
 
   const toggleTaskComplete = (dayIndex: number, taskIndex: number) => {
