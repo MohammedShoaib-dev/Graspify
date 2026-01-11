@@ -220,18 +220,3 @@ npm run lint
 - Firefox 88+
 - Safari 14+
 
-## 📄 License
-
-[Add your license here]
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📧 Support
-
-For support, please [describe contact method or issue tracker]
-
----
-
-**Built with ❤️ for learners everywhere**
